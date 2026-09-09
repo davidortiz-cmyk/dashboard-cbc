@@ -60,7 +60,6 @@
     .id-code { font-family: monospace; color: #64748b; font-size: 0.75rem; }
     .badge-cr { font-weight: 700; color: #047857; background: #ecfdf5; padding: 4px 8px; border-radius: 6px; }
   </style>
-  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 </head>
 <body>
 
@@ -85,54 +84,50 @@
   </div>
 
   <script>
-    google.charts.load('current', {'packages':['corechart']});
-    google.charts.setOnLoadCallback(cargarDatos);
+    // PEGA AQUÍ LA URL COMPLETA QUE TE DIO GOOGLE APPS SCRIPT
+    const API_URL = 'PEGAR_AQUI_TU_URL_DE_APPS_SCRIPT';
 
-    function cargarDatos() {
-      const gvizUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQth53qvQzjQLSzckTa3tvVoD9-LIA-l4Oz0f0K-YbOaBj_HDYVq33iM1LYd3hjNw/gviz/tq?gid=1055035539';
-      const query = new google.visualization.Query(gvizUrl);
-      query.send(handleQueryResponse);
-    }
+    async function cargarDatos() {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
 
-    function handleQueryResponse(response) {
-      if (response.isError()) {
-        console.error(response.getMessage());
-        return;
-      }
+        if (!data || data.length === 0) return;
 
-      const data = response.getDataTable();
-      const numCols = data.getNumberOfColumns();
-      const numRows = data.getNumberOfRows();
+        // Encabezados (Fila de títulos: Embajador, ID, CR, etc.)
+        const headersRow = document.getElementById('headers-row');
+        headersRow.innerHTML = '';
+        data[0].forEach(col => {
+          const th = document.createElement('th');
+          th.textContent = col || '-';
+          headersRow.appendChild(th);
+        });
 
-      // Encabezados
-      const thead = document.querySelector('#headers-row');
-      thead.innerHTML = '';
-      for (let c = 0; c < numCols; c++) {
-        const th = document.createElement('th');
-        th.textContent = data.getFormattedValue(0, c) || data.getColumnLabel(c);
-        thead.appendChild(th);
-      }
+        // Filas de los embajadores
+        const tbody = document.querySelector('#tabla-cbc tbody');
+        tbody.innerHTML = '';
 
-      // Filas
-      const tbody = document.querySelector('#tabla-cbc tbody');
-      tbody.innerHTML = '';
+        for (let r = 1; r < data.length; r++) {
+          const tr = document.createElement('tr');
+          data[r].forEach((val, c) => {
+            const td = document.createElement('td');
+            const celda = val !== null && val !== undefined ? val : '-';
 
-      for (let r = 1; r < numRows; r++) {
-        const tr = document.createElement('tr');
-        for (let c = 0; c < numCols; c++) {
-          const val = data.getFormattedValue(r, c) || '-';
-          const td = document.createElement('td');
-          
-          if (c === 0) td.innerHTML = `<strong>${val}</strong>`;
-          else if (c === 1) { td.className = 'id-code'; td.textContent = val; }
-          else if (c === 2) { td.innerHTML = `<span class="badge-cr">${val}</span>`; }
-          else td.textContent = val;
-          
-          tr.appendChild(td);
+            if (c === 0) td.innerHTML = `<strong>${celda}</strong>`;
+            else if (c === 1) { td.className = 'id-code'; td.textContent = celda; }
+            else if (c === 2) { td.innerHTML = `<span class="badge-cr">${celda}</span>`; }
+            else td.textContent = celda;
+
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
         }
-        tbody.appendChild(tr);
+      } catch (err) {
+        console.error('Error al cargar los datos:', err);
       }
     }
+
+    cargarDatos();
   </script>
 
 </body>
